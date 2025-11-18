@@ -426,7 +426,7 @@ function New-Form {
         Append-Bullet "Test with one file first to verify settings"
         Append-Bullet "Original files are renamed to .old and moved to _Old folder by default"
         $rtb.AppendText("`r`n")
-        Append-Body "For more information, visit the GitHub repository.")
+        Append-Body "For more information, visit the GitHub repository."
         
         $rtb.Add_LinkClicked({
             param($sender, $e)
