@@ -5,19 +5,68 @@ Add-Type -AssemblyName System.Drawing
 # ---------- Settings ----------
 $DefaultBitrate = '5M'
 
-# Resolve script directory robustly and store in script scope
-$script:ScriptDir = $PSScriptRoot
-if (-not $script:ScriptDir) { $script:ScriptDir = Split-Path -Path $PSCommandPath -Parent }
-if (-not $script:ScriptDir) { $script:ScriptDir = (Get-Location).Path }
+# Robust path resolution helpers that work with both .ps1 scripts and compiled EXEs
+function Get-ExecutableDirectory {
+    # Try $PSScriptRoot first (works for .ps1 scripts)
+    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+        return $PSScriptRoot
+    }
+    
+    # Try $PSCommandPath (works for .ps1 scripts)
+    if (-not [string]::IsNullOrWhiteSpace($PSCommandPath)) {
+        return Split-Path -LiteralPath $PSCommandPath -Parent
+    }
+    
+    # Try $MyInvocation.MyCommand.Path (alternative for scripts)
+    if ($MyInvocation -and $MyInvocation.MyCommand -and 
+        -not [string]::IsNullOrWhiteSpace($MyInvocation.MyCommand.Path)) {
+        return Split-Path -LiteralPath $MyInvocation.MyCommand.Path -Parent
+    }
+    
+    # Try AppDomain BaseDirectory (works for compiled EXEs)
+    $base = [System.AppDomain]::CurrentDomain.BaseDirectory
+    if (-not [string]::IsNullOrWhiteSpace($base)) {
+        return $base.TrimEnd('\')
+    }
+    
+    # Final fallback to current location
+    return (Get-Location).Path
+}
 
-# Resolve this script path for persistence operations
-$script:ThisScriptPath = $PSCommandPath
-if (-not $script:ThisScriptPath -and $MyInvocation -and $MyInvocation.MyCommand) {
-    $script:ThisScriptPath = $MyInvocation.MyCommand.Path
+function Get-ExecutablePath {
+    # Try $PSCommandPath first (works for .ps1 scripts)
+    if (-not [string]::IsNullOrWhiteSpace($PSCommandPath)) {
+        return $PSCommandPath
+    }
+    
+    # Try $MyInvocation.MyCommand.Path (alternative for scripts)
+    if ($MyInvocation -and $MyInvocation.MyCommand -and 
+        -not [string]::IsNullOrWhiteSpace($MyInvocation.MyCommand.Path)) {
+        return $MyInvocation.MyCommand.Path
+    }
+    
+    # Try MainModule.FileName (works for compiled EXEs)
+    try {
+        $exe = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+        if (-not [string]::IsNullOrWhiteSpace($exe)) {
+            return $exe
+        }
+    } catch {
+        # MainModule may throw in some contexts, ignore and continue
+    }
+    
+    # Final fallback: construct path using directory + default filename
+    $dir = Get-ExecutableDirectory
+    if (-not [string]::IsNullOrWhiteSpace($dir)) {
+        return Join-Path -Path $dir -ChildPath 'EasyAV1Converter.ps1'
+    }
+    
+    return 'EasyAV1Converter.ps1'
 }
-if (-not $script:ThisScriptPath) {
-    $script:ThisScriptPath = Join-Path -Path $script:ScriptDir -ChildPath 'EasyAV1Converter.ps1'
-}
+
+# Resolve script directory and path using robust helpers
+$script:ScriptDir = Get-ExecutableDirectory
+$script:ThisScriptPath = Get-ExecutablePath
 
 # Optional: explicit ffmpeg path (falls back to PATH if not found)
 $script:FfmpegPath = ''
@@ -38,7 +87,11 @@ function New-Form {
     $form.Text          = 'JalaX Easy AV1 Converter'
     $form.StartPosition = 'CenterScreen'
     $form.Size          = New-Object System.Drawing.Size(900, 720)
+    $form.FormBorderStyle = 'Sizable'
+    $form.MinimizeBox   = $true
     $form.MaximizeBox   = $true
+    $form.WindowState   = 'Normal'
+    $form.MinimumSize   = New-Object System.Drawing.Size(900, 720)
 
     # ---------- Header Section ----------
     # Header panel for branding
