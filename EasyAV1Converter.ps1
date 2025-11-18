@@ -164,6 +164,18 @@ function New-Form {
     [void]$script:lst.Columns.Add('Codec', 60)
     [void]$script:lst.Columns.Add('Bitrate', 90)
     [void]$script:lst.Columns.Add('Est. Time', 90)
+    
+    # Enable Ctrl+A to select all files
+    $script:lst.Add_KeyDown({
+        param($sender, $e)
+        if ($e.Control -and $e.KeyCode -eq 'A') {
+            foreach ($item in $script:lst.Items) {
+                $item.Selected = $true
+            }
+            $e.Handled = $true
+        }
+    })
+    
     $form.Controls.Add($script:lst)
 
     # Refresh
@@ -354,6 +366,15 @@ function New-Form {
         # Build formatted help content
         Append-Heading "JALAX EASY AV1 CONVERTER - HELP GUIDE"
         
+        Append-SectionTitle "ABOUT"
+        Append-Body "Thank you for downloading JalaX Easy AV1 Converter! This software is completely free for everyone to use and share."
+        $rtb.AppendText("`r`n")
+        Append-Body "If you find this tool helpful, any Ko-fi donations (even just `$1) are greatly appreciated and help support continued development."
+        $rtb.AppendText("`r`n")
+        Append-Body "GitHub Repository: https://github.com/scorpiomaj27/Easy-MKV-MP4-to-AV1-Video-Converter"
+        Append-Body "Support on Ko-fi: https://ko-fi.com/jalax22544"
+        $rtb.AppendText("`r`n")
+        
         Append-SectionTitle "WHAT IS THIS APPLICATION?"
         Append-Body "This tool converts video files to the AV1 codec for better compression and smaller file sizes while maintaining quality. It supports batch conversion and provides time estimates."
         $rtb.AppendText("`r`n")
@@ -379,7 +400,7 @@ function New-Form {
         Append-SectionTitle "WHAT IS NVENC?"
         Append-Body "NVENC is NVIDIA's hardware video encoder built into modern NVIDIA GPUs. It provides dramatically faster encoding compared to CPU-based encoding."
         $rtb.AppendText("`r`n")
-        Append-Body "Learn more: https://en.wikipedia.org/wiki/NVENC"
+        Append-Body "Learn more: https://grok.x.ai/search?q=NVENC"
         $rtb.AppendText("`r`n")
         Append-Body "NVENC is NOT required - the application will work with CPU encoding (libaom-av1) if NVENC is unavailable. However, CPU encoding is significantly slower."
         $rtb.AppendText("`r`n")
@@ -427,6 +448,11 @@ function New-Form {
         Append-Bullet "Original files are renamed to .old and moved to _Old folder by default"
         $rtb.AppendText("`r`n")
         Append-Body "For more information, visit the GitHub repository."
+        
+        # Scroll to top of help window
+        $rtb.SelectionStart = 0
+        $rtb.SelectionLength = 0
+        $rtb.ScrollToCaret()
         
         $rtb.Add_LinkClicked({
             param($sender, $e)
