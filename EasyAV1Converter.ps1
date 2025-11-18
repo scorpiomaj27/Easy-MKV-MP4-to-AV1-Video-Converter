@@ -57,21 +57,21 @@ function New-Form {
     $lblTitle.Location       = New-Object System.Drawing.Point(15, 15)
     $pnlHeader.Controls.Add($lblTitle)
     
-    # GitHub link
-    $lnkGitHub               = New-Object System.Windows.Forms.LinkLabel
-    $lnkGitHub.Text          = '⚙ GitHub Repository'
-    $lnkGitHub.Font          = New-Object System.Drawing.Font('Segoe UI', 9)
-    $lnkGitHub.LinkColor     = [System.Drawing.Color]::LightSkyBlue
-    $lnkGitHub.ActiveLinkColor = [System.Drawing.Color]::DodgerBlue
-    $lnkGitHub.VisitedLinkColor = [System.Drawing.Color]::LightSkyBlue
-    $lnkGitHub.AutoSize      = $true
-    $lnkGitHub.Location      = New-Object System.Drawing.Point(600, 20)
-    $lnkGitHub.Add_LinkClicked({
-        Start-Process 'https://github.com/scorpiomaj27/Easy-MKV-MP4-to-AV1-Video-Converter'
+    # Help button
+    $btnHelp                 = New-Object System.Windows.Forms.Button
+    $btnHelp.Text            = '? Help'
+    $btnHelp.Font            = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
+    $btnHelp.ForeColor       = [System.Drawing.Color]::White
+    $btnHelp.BackColor       = [System.Drawing.Color]::FromArgb(60, 60, 65)
+    $btnHelp.FlatStyle       = 'Flat'
+    $btnHelp.Size            = New-Object System.Drawing.Size(70, 26)
+    $btnHelp.Location        = New-Object System.Drawing.Point(500, 17)
+    $btnHelp.Add_Click({
+        Show-HelpWindow
     })
-    $pnlHeader.Controls.Add($lnkGitHub)
+    $pnlHeader.Controls.Add($btnHelp)
     
-    # Ko-fi link
+    # Ko-fi link (positioned dynamically to prevent cutoff)
     $lnkKofi                 = New-Object System.Windows.Forms.LinkLabel
     $lnkKofi.Text            = '☕ Support on Ko-fi (Donate)'
     $lnkKofi.Font            = New-Object System.Drawing.Font('Segoe UI', 9)
@@ -79,11 +79,29 @@ function New-Form {
     $lnkKofi.ActiveLinkColor = [System.Drawing.Color]::Coral
     $lnkKofi.VisitedLinkColor = [System.Drawing.Color]::LightCoral
     $lnkKofi.AutoSize        = $true
-    $lnkKofi.Location        = New-Object System.Drawing.Point(740, 20)
+    $lnkKofi.Anchor          = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right
     $lnkKofi.Add_LinkClicked({
         Start-Process 'https://ko-fi.com/jalax22544'
     })
     $pnlHeader.Controls.Add($lnkKofi)
+    
+    # GitHub link (positioned to left of Ko-fi)
+    $lnkGitHub               = New-Object System.Windows.Forms.LinkLabel
+    $lnkGitHub.Text          = '⚙ GitHub Repository'
+    $lnkGitHub.Font          = New-Object System.Drawing.Font('Segoe UI', 9)
+    $lnkGitHub.LinkColor     = [System.Drawing.Color]::LightSkyBlue
+    $lnkGitHub.ActiveLinkColor = [System.Drawing.Color]::DodgerBlue
+    $lnkGitHub.VisitedLinkColor = [System.Drawing.Color]::LightSkyBlue
+    $lnkGitHub.AutoSize      = $true
+    $lnkGitHub.Anchor        = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right
+    $lnkGitHub.Add_LinkClicked({
+        Start-Process 'https://github.com/scorpiomaj27/Easy-MKV-MP4-to-AV1-Video-Converter'
+    })
+    $pnlHeader.Controls.Add($lnkGitHub)
+    
+    # Position links dynamically after they're added (prevents cutoff)
+    $lnkKofi.Location = New-Object System.Drawing.Point(($pnlHeader.Width - $lnkKofi.PreferredSize.Width - 10), 20)
+    $lnkGitHub.Location = New-Object System.Drawing.Point(($lnkKofi.Left - $lnkGitHub.PreferredSize.Width - 20), 20)
 
     # ---------- Main Controls ----------
     # Folder dropdown label
@@ -140,9 +158,10 @@ function New-Form {
     $script:lst.MultiSelect      = $true
     $script:lst.Location         = New-Object System.Drawing.Point(10, 145)
     $script:lst.Size             = New-Object System.Drawing.Size(540, 385)
-    [void]$script:lst.Columns.Add('Name', 280)
-    [void]$script:lst.Columns.Add('Size', 80)
-    [void]$script:lst.Columns.Add('Codec', 70)
+    [void]$script:lst.Columns.Add('Name', 200)
+    [void]$script:lst.Columns.Add('Size', 70)
+    [void]$script:lst.Columns.Add('Codec', 60)
+    [void]$script:lst.Columns.Add('Bitrate', 90)
     [void]$script:lst.Columns.Add('Est. Time', 90)
     $form.Controls.Add($script:lst)
 
@@ -184,12 +203,19 @@ function New-Form {
     $script:cmbBr.SelectedItem = '5M'
     $form.Controls.Add($script:cmbBr)
 
+    # Enable NVENC checkbox
+    $script:chkNvenc             = New-Object System.Windows.Forms.CheckBox
+    $script:chkNvenc.Text        = 'Enable NVENC (if available)'
+    $script:chkNvenc.AutoSize    = $true
+    $script:chkNvenc.Location    = New-Object System.Drawing.Point(590, 150)
+    $form.Controls.Add($script:chkNvenc)
+
     # Rename .old checkbox
     $script:chkRename            = New-Object System.Windows.Forms.CheckBox
     $script:chkRename.Text       = 'Rename original to .old after convert'
     $script:chkRename.Checked    = $true
     $script:chkRename.AutoSize   = $true
-    $script:chkRename.Location   = New-Object System.Drawing.Point(590, 160)
+    $script:chkRename.Location   = New-Object System.Drawing.Point(590, 175)
     $form.Controls.Add($script:chkRename)
 
     # Move to _Old checkbox
@@ -197,34 +223,34 @@ function New-Form {
     $script:chkMoveOld.Text      = 'Move files to Old Folder After Conversion'
     $script:chkMoveOld.Checked   = $true
     $script:chkMoveOld.AutoSize  = $true
-    $script:chkMoveOld.Location  = New-Object System.Drawing.Point(590, 182)
+    $script:chkMoveOld.Location  = New-Object System.Drawing.Point(590, 197)
     $form.Controls.Add($script:chkMoveOld)
 
     # Convert button
     $script:btnConvert           = New-Object System.Windows.Forms.Button
     $script:btnConvert.Text      = 'Convert to AV1'
-    $script:btnConvert.Location  = New-Object System.Drawing.Point(590, 225)
+    $script:btnConvert.Location  = New-Object System.Drawing.Point(590, 240)
     $script:btnConvert.Size      = New-Object System.Drawing.Size(140, 34)
     $form.Controls.Add($script:btnConvert)
 
     # Test Speed button
     $script:btnTestSpeed         = New-Object System.Windows.Forms.Button
     $script:btnTestSpeed.Text    = 'Test Speed'
-    $script:btnTestSpeed.Location = New-Object System.Drawing.Point(590, 265)
+    $script:btnTestSpeed.Location = New-Object System.Drawing.Point(590, 280)
     $script:btnTestSpeed.Size    = New-Object System.Drawing.Size(90, 28)
     $form.Controls.Add($script:btnTestSpeed)
     
     # Adaptive Test button
     $script:btnAdaptiveTest      = New-Object System.Windows.Forms.Button
     $script:btnAdaptiveTest.Text = 'Adaptive Test'
-    $script:btnAdaptiveTest.Location = New-Object System.Drawing.Point(690, 265)
+    $script:btnAdaptiveTest.Location = New-Object System.Drawing.Point(690, 280)
     $script:btnAdaptiveTest.Size = New-Object System.Drawing.Size(90, 28)
     $form.Controls.Add($script:btnAdaptiveTest)
 
     # Cancel button
     $script:btnCancel            = New-Object System.Windows.Forms.Button
     $script:btnCancel.Text       = 'Cancel'
-    $script:btnCancel.Location   = New-Object System.Drawing.Point(740, 225)
+    $script:btnCancel.Location   = New-Object System.Drawing.Point(740, 240)
     $script:btnCancel.Size       = New-Object System.Drawing.Size(120, 34)
     $script:btnCancel.Enabled    = $false
     $form.Controls.Add($script:btnCancel)
@@ -240,11 +266,115 @@ function New-Form {
 
     # ---------- Helpers ----------
     $script:CodecCache = @{}
+    $script:BitrateCache = @{}
 
     function script:Append-Log($text) {
         $script:txtLog.AppendText($text + "`r`n")
         $script:txtLog.SelectionStart = $script:txtLog.Text.Length
         $script:txtLog.ScrollToCaret()
+    }
+
+    function script:Show-HelpWindow {
+        $helpForm = New-Object System.Windows.Forms.Form
+        $helpForm.Text = 'JalaX Easy AV1 Converter - Help'
+        $helpForm.Size = New-Object System.Drawing.Size(700, 560)
+        $helpForm.StartPosition = 'CenterParent'
+        $helpForm.FormBorderStyle = 'FixedDialog'
+        $helpForm.MaximizeBox = $false
+        $helpForm.MinimizeBox = $false
+        
+        $rtb = New-Object System.Windows.Forms.RichTextBox
+        $rtb.Dock = 'Fill'
+        $rtb.ReadOnly = $true
+        $rtb.DetectUrls = $true
+        $rtb.Font = New-Object System.Drawing.Font('Segoe UI', 10)
+        $rtb.BackColor = [System.Drawing.Color]::White
+        $rtb.BorderStyle = 'None'
+        
+        $helpText = @"
+JALAX EASY AV1 CONVERTER - HELP GUIDE
+
+WHAT IS THIS APPLICATION?
+This tool converts video files to the AV1 codec for better compression and smaller file sizes while maintaining quality. It supports batch conversion and provides time estimates.
+
+FFMPEG REQUIREMENT
+This application requires FFmpeg to function. FFmpeg is a free, open-source multimedia framework.
+
+Download FFmpeg: https://ffmpeg.org/download.html
+
+Installation Options:
+1. Add FFmpeg to Windows PATH environment variable (recommended)
+2. Place ffmpeg.exe in the same folder as this script
+3. Use the "Browse..." button to locate ffmpeg.exe manually
+
+To add FFmpeg to PATH:
+- Right-click "This PC" → Properties → Advanced system settings
+- Click "Environment Variables"
+- Under "System variables", find "Path" and click "Edit"
+- Click "New" and add the folder containing ffmpeg.exe
+- Click OK and restart PowerShell
+
+WHAT IS NVENC?
+NVENC is NVIDIA's hardware video encoder built into modern NVIDIA GPUs. It provides dramatically faster encoding compared to CPU-based encoding.
+
+Learn more: https://en.wikipedia.org/wiki/NVENC
+
+NVENC is NOT required - the application will work with CPU encoding (libaom-av1) if NVENC is unavailable. However, CPU encoding is significantly slower.
+
+ENABLE NVENC CHECKBOX
+- Checked: Use NVENC hardware encoding if available (much faster)
+- Unchecked: Force CPU encoding even if NVENC is available
+- The checkbox defaults to checked if your system supports NVENC
+
+SUPPORTED SOURCE FILE TYPES
+When "View all video files" is unchecked (default):
+- MKV files only
+
+When "View all video files" is checked:
+- MKV, MP4, AVI, MOV, M4V, WebM, TS, M2TS, WMV, FLV, MPG, MPEG, VOB
+
+CHOOSING THE RIGHT BITRATE
+The "Bitrate" column shows your source file's actual bitrate.
+
+Guidelines:
+- Match source bitrate: Good quality, moderate file size reduction
+- Lower than source: Smaller files, some quality loss
+- Higher than source: Larger files, NO quality improvement (wasteful)
+
+Recommended approach:
+1. Check your source file's bitrate in the list
+2. Choose a target bitrate at or below the source
+3. For high-quality sources (10+ Mbps), try 5-7.5M
+4. For lower-quality sources (3-5 Mbps), try 2.5-5M
+5. Use "Test Speed" to estimate conversion time before starting
+
+BASIC WORKFLOW
+1. Select folder containing video files
+2. Check "View all video files" if needed
+3. Click "Refresh" to scan for files
+4. Select files to convert (Ctrl+Click for multiple)
+5. Choose target bitrate
+6. Optional: Click "Test Speed" to estimate time
+7. Click "Convert to AV1" to start
+8. Monitor progress in the log window
+
+TIPS
+- Close other GPU-intensive applications before converting
+- Use NVENC for much faster encoding if available
+- Test with one file first to verify settings
+- Original files are renamed to .old and moved to _Old folder by default
+
+For more information, visit the GitHub repository.
+"@
+        
+        $rtb.Text = $helpText
+        $rtb.Add_LinkClicked({
+            param($sender, $e)
+            Start-Process $e.LinkText
+        })
+        
+        $helpForm.Controls.Add($rtb)
+        [void]$helpForm.ShowDialog()
     }
 
     function script:Apply-Theme {
@@ -266,6 +396,9 @@ function New-Form {
                         }
                         elseif ($panelCtrl -is [System.Windows.Forms.LinkLabel]) {
                             # Link labels maintain their custom colors
+                        }
+                        elseif ($panelCtrl -is [System.Windows.Forms.Button]) {
+                            # Help button maintains its custom colors
                         }
                     }
                 }
@@ -482,6 +615,94 @@ function New-Form {
         return $script:CodecCache[$FullPath]
     }
 
+    function script:Get-VideoBitrate([string]$FullPath) {
+        if ($script:BitrateCache.ContainsKey($FullPath)) { return $script:BitrateCache[$FullPath] }
+        $bitrate = 0
+        $ffprobe = $null
+        try { $ffprobe = (Get-Command ffprobe -ErrorAction Stop).Path } catch {}
+        if (-not $ffprobe -and $script:FfmpegPath) {
+            try { $ffdir = [System.IO.Path]::GetDirectoryName($script:FfmpegPath); $cand = Join-Path -Path $ffdir -ChildPath 'ffprobe.exe'; if (Test-Path -LiteralPath $cand) { $ffprobe = $cand } } catch {}
+        }
+        if ($ffprobe) {
+            try {
+                # Try to get video stream bitrate first
+                $psi = New-Object System.Diagnostics.ProcessStartInfo
+                $psi.FileName  = $ffprobe
+                $psi.Arguments = ('-v error -select_streams v:0 -show_entries stream=bit_rate -of default=nw=1:nk=1 "{0}"' -f $FullPath)
+                $psi.RedirectStandardOutput = $true
+                $psi.RedirectStandardError  = $true
+                $psi.UseShellExecute = $false
+                $psi.CreateNoWindow = $true
+                $p = New-Object System.Diagnostics.Process
+                $p.StartInfo = $psi
+                [void]$p.Start()
+                $out = $p.StandardOutput.ReadToEnd().Trim()
+                $p.WaitForExit()
+                if ($out -and $out -match '^\d+$') { $bitrate = [int]$out }
+            } catch {}
+            
+            # Fallback to container bitrate if stream bitrate not available
+            if ($bitrate -le 0) {
+                try {
+                    $psi = New-Object System.Diagnostics.ProcessStartInfo
+                    $psi.FileName  = $ffprobe
+                    $psi.Arguments = ('-v error -show_entries format=bit_rate -of default=nw=1:nk=1 "{0}"' -f $FullPath)
+                    $psi.RedirectStandardOutput = $true
+                    $psi.RedirectStandardError  = $true
+                    $psi.UseShellExecute = $false
+                    $psi.CreateNoWindow = $true
+                    $p = New-Object System.Diagnostics.Process
+                    $p.StartInfo = $psi
+                    [void]$p.Start()
+                    $out = $p.StandardOutput.ReadToEnd().Trim()
+                    $p.WaitForExit()
+                    if ($out -and $out -match '^\d+$') { $bitrate = [int]$out }
+                } catch {}
+            }
+            
+            # Last resort: estimate from file size and duration
+            if ($bitrate -le 0) {
+                try {
+                    $psi = New-Object System.Diagnostics.ProcessStartInfo
+                    $psi.FileName  = $ffprobe
+                    $psi.Arguments = ('-v error -show_entries format=duration -of default=nw=1:nk=1 "{0}"' -f $FullPath)
+                    $psi.RedirectStandardOutput = $true
+                    $psi.RedirectStandardError  = $true
+                    $psi.UseShellExecute = $false
+                    $psi.CreateNoWindow = $true
+                    $p = New-Object System.Diagnostics.Process
+                    $p.StartInfo = $psi
+                    [void]$p.Start()
+                    $out = $p.StandardOutput.ReadToEnd().Trim()
+                    $p.WaitForExit()
+                    if ($out -and $out -match '^\d+\.?\d*$') {
+                        $duration = [double]$out
+                        if ($duration -gt 0) {
+                            $fileInfo = Get-Item -LiteralPath $FullPath
+                            $bitrate = [int](($fileInfo.Length * 8) / $duration)
+                        }
+                    }
+                } catch {}
+            }
+        }
+        
+        # Format bitrate for display
+        $bitrateStr = if ($bitrate -gt 0) {
+            $kbps = [Math]::Round($bitrate / 1000)
+            if ($kbps -ge 1000) {
+                $mbps = [Math]::Round($kbps / 1000, 1)
+                "{0} Mbps" -f $mbps
+            } else {
+                "{0} kbps" -f $kbps
+            }
+        } else {
+            "unknown"
+        }
+        
+        $script:BitrateCache[$FullPath] = $bitrateStr
+        return $script:BitrateCache[$FullPath]
+    }
+
     function script:Get-VideoFrameCount([string]$FullPath) {
         $ffprobe = $null
         try { $ffprobe = (Get-Command ffprobe -ErrorAction Stop).Path } catch {}
@@ -563,6 +784,17 @@ function New-Form {
         }
         Update-FfmpegLabel
         $enc = Get-Av1Encoder
+        
+        # Check NVENC checkbox setting and override encoder if needed
+        if ($script:chkNvenc -and -not $script:chkNvenc.Checked) {
+            # User disabled NVENC, force CPU encoder
+            $enc = 'libaom-av1'
+            Append-Log ("NVENC disabled by user - forcing CPU encoder")
+        } elseif ($script:chkNvenc -and $script:chkNvenc.Checked -and $enc -ne 'av1_nvenc') {
+            # User wants NVENC but it's not available
+            Append-Log ("NVENC requested but not available - falling back to CPU encoder")
+        }
+        
         Append-Log ("========================================")
         Append-Log ("Using AV1 encoder: {0}" -f $enc)
         if ($enc -eq 'av1_nvenc') {
@@ -686,7 +918,7 @@ function New-Form {
                 
                 # Update adaptive calibration if we have an estimate for this file
                 foreach ($item in $script:lst.Items) {
-                    if ($item.Tag -eq $name -and $item.SubItems[3].Text -match '([\d.]+)m') {
+                    if ($item.Tag -eq $name -and $item.SubItems[4].Text -match '([\d.]+)m') {
                         $estimatedMinutes = [double]$matches[1]
                         $estimatedSeconds = $estimatedMinutes * 60
                         Update-Calibration -EstimatedSeconds $estimatedSeconds -ActualSeconds $actualSeconds -FileName $name
@@ -945,7 +1177,7 @@ function New-Form {
                             } else {
                                 "{0:N1}m" -f $estimatedMinutes
                             }
-                            $item.SubItems[3].Text = $timeDisplay
+                            $item.SubItems[4].Text = $timeDisplay
                             break
                         }
                     }
@@ -962,7 +1194,7 @@ function New-Form {
                     # Update ListView to show error
                     foreach ($item in $script:lst.Items) {
                         if ($item.Tag -eq $name) {
-                            $item.SubItems[3].Text = "Error"
+                            $item.SubItems[4].Text = "Error"
                             break
                         }
                     }
@@ -1152,15 +1384,17 @@ function New-Form {
         foreach ($f in $files) {
             $sizeMB = [Math]::Round(($f.Length/1MB),2)
             $codec = Get-VideoCodec -FullPath $f.FullName
+            $bitrate = Get-VideoBitrate -FullPath $f.FullName
             $item = New-Object System.Windows.Forms.ListViewItem($f.Name)
             [void]$item.SubItems.Add(("{0} MB" -f $sizeMB))
             [void]$item.SubItems.Add($codec)
+            [void]$item.SubItems.Add($bitrate)
             [void]$item.SubItems.Add("")  # Est. Time column (empty initially)
             $item.Tag = $f.Name
             [void]$script:lst.Items.Add($item)
         }
         if ($script:lst.Items.Count -eq 0) { 
-            $msg = if ($All) { 'No video files found.' } else { 'No MKV files found.' }
+            $msg = if ($All) { 'No video files found.' } else { 'No video source files found.' }
             Append-Log $msg
         }
     }
@@ -1172,6 +1406,17 @@ function New-Form {
     # Initial label/theme/load
     Update-FfmpegLabel
     Load-Calibration
+    
+    # Initialize NVENC checkbox based on encoder detection
+    $detectedEncoder = Get-Av1Encoder
+    if ($detectedEncoder -eq 'av1_nvenc') {
+        $script:chkNvenc.Checked = $true
+        Append-Log ("NVENC support detected - hardware acceleration enabled by default")
+    } else {
+        $script:chkNvenc.Checked = $false
+        Append-Log ("NVENC not detected - CPU encoding will be used")
+    }
+    
     Load-Files -All:$script:chkAll.Checked
     Apply-Theme -Dark:$script:chkDark.Checked
     return $form
