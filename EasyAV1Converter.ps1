@@ -1,4 +1,4 @@
-# Easy AV1 Converter
+# JalaX Easy AV1 Converter
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
@@ -35,22 +35,68 @@ $script:HasWarnedAboutCompetingProcesses = $false
 # ---------- UI ----------
 function New-Form {
     $form               = New-Object System.Windows.Forms.Form
-    $form.Text          = 'Easy AV1 Converter'
+    $form.Text          = 'JalaX Easy AV1 Converter'
     $form.StartPosition = 'CenterScreen'
-    $form.Size          = New-Object System.Drawing.Size(900, 640)
+    $form.Size          = New-Object System.Drawing.Size(900, 720)
     $form.MaximizeBox   = $true
 
+    # ---------- Header Section ----------
+    # Header panel for branding
+    $pnlHeader               = New-Object System.Windows.Forms.Panel
+    $pnlHeader.Location      = New-Object System.Drawing.Point(0, 0)
+    $pnlHeader.Size          = New-Object System.Drawing.Size(900, 60)
+    $pnlHeader.BackColor     = [System.Drawing.Color]::FromArgb(45, 45, 48)
+    $form.Controls.Add($pnlHeader)
+    
+    # Application title
+    $lblTitle                = New-Object System.Windows.Forms.Label
+    $lblTitle.Text           = 'JalaX Easy AV1 Converter'
+    $lblTitle.Font           = New-Object System.Drawing.Font('Segoe UI', 16, [System.Drawing.FontStyle]::Bold)
+    $lblTitle.ForeColor      = [System.Drawing.Color]::White
+    $lblTitle.AutoSize       = $true
+    $lblTitle.Location       = New-Object System.Drawing.Point(15, 15)
+    $pnlHeader.Controls.Add($lblTitle)
+    
+    # GitHub link
+    $lnkGitHub               = New-Object System.Windows.Forms.LinkLabel
+    $lnkGitHub.Text          = '⚙ GitHub Repository'
+    $lnkGitHub.Font          = New-Object System.Drawing.Font('Segoe UI', 9)
+    $lnkGitHub.LinkColor     = [System.Drawing.Color]::LightSkyBlue
+    $lnkGitHub.ActiveLinkColor = [System.Drawing.Color]::DodgerBlue
+    $lnkGitHub.VisitedLinkColor = [System.Drawing.Color]::LightSkyBlue
+    $lnkGitHub.AutoSize      = $true
+    $lnkGitHub.Location      = New-Object System.Drawing.Point(600, 20)
+    $lnkGitHub.Add_LinkClicked({
+        Start-Process 'https://github.com/scorpiomaj27/Easy-MKV-MP4-to-AV1-Video-Converter'
+    })
+    $pnlHeader.Controls.Add($lnkGitHub)
+    
+    # Ko-fi link
+    $lnkKofi                 = New-Object System.Windows.Forms.LinkLabel
+    $lnkKofi.Text            = '☕ Support on Ko-fi (Donate)'
+    $lnkKofi.Font            = New-Object System.Drawing.Font('Segoe UI', 9)
+    $lnkKofi.LinkColor       = [System.Drawing.Color]::LightCoral
+    $lnkKofi.ActiveLinkColor = [System.Drawing.Color]::Coral
+    $lnkKofi.VisitedLinkColor = [System.Drawing.Color]::LightCoral
+    $lnkKofi.AutoSize        = $true
+    $lnkKofi.Location        = New-Object System.Drawing.Point(740, 20)
+    $lnkKofi.Add_LinkClicked({
+        Start-Process 'https://ko-fi.com/jalax22544'
+    })
+    $pnlHeader.Controls.Add($lnkKofi)
+
+    # ---------- Main Controls ----------
     # Folder dropdown label
     $lblFolder            = New-Object System.Windows.Forms.Label
     $lblFolder.Text       = "Folder:"
     $lblFolder.AutoSize   = $true
-    $lblFolder.Location   = New-Object System.Drawing.Point(10, 10)
+    $lblFolder.Location   = New-Object System.Drawing.Point(10, 70)
     $form.Controls.Add($lblFolder)
     
     # Folder dropdown
     $script:cmbFolder               = New-Object System.Windows.Forms.ComboBox
     $script:cmbFolder.DropDownStyle = 'DropDown'
-    $script:cmbFolder.Location      = New-Object System.Drawing.Point(60, 8)
+    $script:cmbFolder.Location      = New-Object System.Drawing.Point(60, 68)
     $script:cmbFolder.Size          = New-Object System.Drawing.Size(480, 28)
     $script:cmbFolder.Text          = $script:ScriptDir
     $form.Controls.Add($script:cmbFolder)
@@ -58,7 +104,7 @@ function New-Form {
     # Browse folder button
     $btnBrowseFolder           = New-Object System.Windows.Forms.Button
     $btnBrowseFolder.Text      = '...'
-    $btnBrowseFolder.Location  = New-Object System.Drawing.Point(550, 8)
+    $btnBrowseFolder.Location  = New-Object System.Drawing.Point(550, 68)
     $btnBrowseFolder.Size      = New-Object System.Drawing.Size(30, 22)
     $form.Controls.Add($btnBrowseFolder)
 
@@ -66,7 +112,7 @@ function New-Form {
     $script:lblFfmpeg           = New-Object System.Windows.Forms.Label
     $script:lblFfmpeg.Text      = 'FFmpeg: resolving...'
     $script:lblFfmpeg.AutoSize  = $true
-    $script:lblFfmpeg.Location  = New-Object System.Drawing.Point(10, 35)
+    $script:lblFfmpeg.Location  = New-Object System.Drawing.Point(10, 95)
     $script:lblFfmpeg.MaximumSize= New-Object System.Drawing.Size(470, 0)
     $script:lblFfmpeg.AutoEllipsis = $true
     $form.Controls.Add($script:lblFfmpeg)
@@ -74,7 +120,7 @@ function New-Form {
     # Browse FFmpeg button
     $btnBrowseFfmpeg           = New-Object System.Windows.Forms.Button
     $btnBrowseFfmpeg.Text      = 'Browse...'
-    $btnBrowseFfmpeg.Location  = New-Object System.Drawing.Point(490, 33)
+    $btnBrowseFfmpeg.Location  = New-Object System.Drawing.Point(490, 93)
     $btnBrowseFfmpeg.Size      = New-Object System.Drawing.Size(80, 22)
     $form.Controls.Add($btnBrowseFfmpeg)
 
@@ -82,7 +128,7 @@ function New-Form {
     $script:lblCurrent           = New-Object System.Windows.Forms.Label
     $script:lblCurrent.Text      = 'Current: (idle)'
     $script:lblCurrent.AutoSize  = $true
-    $script:lblCurrent.Location  = New-Object System.Drawing.Point(10, 60)
+    $script:lblCurrent.Location  = New-Object System.Drawing.Point(10, 120)
     $script:lblCurrent.MaximumSize= New-Object System.Drawing.Size(860, 0)
     $script:lblCurrent.AutoEllipsis = $true
     $form.Controls.Add($script:lblCurrent)
@@ -92,8 +138,8 @@ function New-Form {
     $script:lst.View             = 'Details'
     $script:lst.FullRowSelect    = $true
     $script:lst.MultiSelect      = $true
-    $script:lst.Location         = New-Object System.Drawing.Point(10, 85)
-    $script:lst.Size             = New-Object System.Drawing.Size(540, 365)
+    $script:lst.Location         = New-Object System.Drawing.Point(10, 145)
+    $script:lst.Size             = New-Object System.Drawing.Size(540, 385)
     [void]$script:lst.Columns.Add('Name', 280)
     [void]$script:lst.Columns.Add('Size', 80)
     [void]$script:lst.Columns.Add('Codec', 70)
@@ -103,7 +149,7 @@ function New-Form {
     # Refresh
     $btnRefresh           = New-Object System.Windows.Forms.Button
     $btnRefresh.Text      = 'Refresh'
-    $btnRefresh.Location  = New-Object System.Drawing.Point(10, 460)
+    $btnRefresh.Location  = New-Object System.Drawing.Point(10, 540)
     $btnRefresh.Size      = New-Object System.Drawing.Size(80, 28)
     $form.Controls.Add($btnRefresh)
 
@@ -112,7 +158,7 @@ function New-Form {
     $script:chkAll.Text         = 'View all video files'
     $script:chkAll.AutoSize     = $true
     $script:chkAll.Checked      = $false
-    $script:chkAll.Location     = New-Object System.Drawing.Point(100, 463)
+    $script:chkAll.Location     = New-Object System.Drawing.Point(100, 543)
     $form.Controls.Add($script:chkAll)
 
     # Dark mode
@@ -120,19 +166,19 @@ function New-Form {
     $script:chkDark.Text          = 'Dark mode'
     $script:chkDark.AutoSize      = $true
     $script:chkDark.Checked       = $false
-    $script:chkDark.Location      = New-Object System.Drawing.Point(230, 463)
+    $script:chkDark.Location      = New-Object System.Drawing.Point(230, 543)
     $form.Controls.Add($script:chkDark)
 
     # Bitrate (fixed options)
     $lblBr                = New-Object System.Windows.Forms.Label
     $lblBr.Text           = 'Bitrate'
     $lblBr.AutoSize       = $true
-    $lblBr.Location       = New-Object System.Drawing.Point(590, 35)
+    $lblBr.Location       = New-Object System.Drawing.Point(590, 95)
     $form.Controls.Add($lblBr)
 
     $script:cmbBr               = New-Object System.Windows.Forms.ComboBox
     $script:cmbBr.DropDownStyle = 'DropDownList'
-    $script:cmbBr.Location      = New-Object System.Drawing.Point(590, 55)
+    $script:cmbBr.Location      = New-Object System.Drawing.Point(590, 115)
     $script:cmbBr.Size          = New-Object System.Drawing.Size(140, 28)
     [void]$script:cmbBr.Items.AddRange(@('2.5M','5M','7.5M','10M'))
     $script:cmbBr.SelectedItem = '5M'
@@ -143,7 +189,7 @@ function New-Form {
     $script:chkRename.Text       = 'Rename original to .old after convert'
     $script:chkRename.Checked    = $true
     $script:chkRename.AutoSize   = $true
-    $script:chkRename.Location   = New-Object System.Drawing.Point(590, 100)
+    $script:chkRename.Location   = New-Object System.Drawing.Point(590, 160)
     $form.Controls.Add($script:chkRename)
 
     # Move to _Old checkbox
@@ -151,41 +197,41 @@ function New-Form {
     $script:chkMoveOld.Text      = 'Move files to Old Folder After Conversion'
     $script:chkMoveOld.Checked   = $true
     $script:chkMoveOld.AutoSize  = $true
-    $script:chkMoveOld.Location  = New-Object System.Drawing.Point(590, 122)
+    $script:chkMoveOld.Location  = New-Object System.Drawing.Point(590, 182)
     $form.Controls.Add($script:chkMoveOld)
 
     # Convert button
     $script:btnConvert           = New-Object System.Windows.Forms.Button
     $script:btnConvert.Text      = 'Convert to AV1'
-    $script:btnConvert.Location  = New-Object System.Drawing.Point(590, 165)
+    $script:btnConvert.Location  = New-Object System.Drawing.Point(590, 225)
     $script:btnConvert.Size      = New-Object System.Drawing.Size(140, 34)
     $form.Controls.Add($script:btnConvert)
 
     # Test Speed button
     $script:btnTestSpeed         = New-Object System.Windows.Forms.Button
     $script:btnTestSpeed.Text    = 'Test Speed'
-    $script:btnTestSpeed.Location = New-Object System.Drawing.Point(590, 205)
+    $script:btnTestSpeed.Location = New-Object System.Drawing.Point(590, 265)
     $script:btnTestSpeed.Size    = New-Object System.Drawing.Size(90, 28)
     $form.Controls.Add($script:btnTestSpeed)
     
     # Adaptive Test button
     $script:btnAdaptiveTest      = New-Object System.Windows.Forms.Button
     $script:btnAdaptiveTest.Text = 'Adaptive Test'
-    $script:btnAdaptiveTest.Location = New-Object System.Drawing.Point(690, 205)
+    $script:btnAdaptiveTest.Location = New-Object System.Drawing.Point(690, 265)
     $script:btnAdaptiveTest.Size = New-Object System.Drawing.Size(90, 28)
     $form.Controls.Add($script:btnAdaptiveTest)
 
     # Cancel button
     $script:btnCancel            = New-Object System.Windows.Forms.Button
     $script:btnCancel.Text       = 'Cancel'
-    $script:btnCancel.Location   = New-Object System.Drawing.Point(740, 165)
+    $script:btnCancel.Location   = New-Object System.Drawing.Point(740, 225)
     $script:btnCancel.Size       = New-Object System.Drawing.Size(120, 34)
     $script:btnCancel.Enabled    = $false
     $form.Controls.Add($script:btnCancel)
 
     # Log output
     $script:txtLog               = New-Object System.Windows.Forms.TextBox
-    $script:txtLog.Location      = New-Object System.Drawing.Point(10, 500)
+    $script:txtLog.Location      = New-Object System.Drawing.Point(10, 580)
     $script:txtLog.Size          = New-Object System.Drawing.Size(860, 100)
     $script:txtLog.Multiline     = $true
     $script:txtLog.ScrollBars    = 'Vertical'
@@ -205,10 +251,25 @@ function New-Form {
         param([bool]$Dark)
         $bg = if ($Dark) { [System.Drawing.Color]::FromArgb(30,30,30) } else { [System.Drawing.SystemColors]::Window }
         $fg = if ($Dark) { [System.Drawing.Color]::WhiteSmoke } else { [System.Drawing.SystemColors]::WindowText }
+        $headerBg = if ($Dark) { [System.Drawing.Color]::FromArgb(45,45,48) } else { [System.Drawing.Color]::FromArgb(45,45,48) }
+        
         $form.BackColor = $bg
         foreach ($ctrl in $form.Controls) {
             try {
-                if ($ctrl -is [System.Windows.Forms.TextBox]) { $ctrl.BackColor = $bg; $ctrl.ForeColor = $fg }
+                if ($ctrl -is [System.Windows.Forms.Panel]) { 
+                    # Keep header panel dark in both modes for branding consistency
+                    $ctrl.BackColor = $headerBg
+                    # Apply theme to controls within the panel
+                    foreach ($panelCtrl in $ctrl.Controls) {
+                        if ($panelCtrl -is [System.Windows.Forms.Label]) { 
+                            $panelCtrl.ForeColor = [System.Drawing.Color]::White 
+                        }
+                        elseif ($panelCtrl -is [System.Windows.Forms.LinkLabel]) {
+                            # Link labels maintain their custom colors
+                        }
+                    }
+                }
+                elseif ($ctrl -is [System.Windows.Forms.TextBox]) { $ctrl.BackColor = $bg; $ctrl.ForeColor = $fg }
                 elseif ($ctrl -is [System.Windows.Forms.ListView]) { $ctrl.BackColor = $bg; $ctrl.ForeColor = $fg }
                 elseif ($ctrl -is [System.Windows.Forms.ComboBox]) { $ctrl.BackColor = $bg; $ctrl.ForeColor = $fg }
                 elseif ($ctrl -is [System.Windows.Forms.Label]) { $ctrl.ForeColor = $fg }
