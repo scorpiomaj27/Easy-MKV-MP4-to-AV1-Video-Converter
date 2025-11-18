@@ -59,12 +59,12 @@ function New-Form {
     
     # Help button
     $btnHelp                 = New-Object System.Windows.Forms.Button
-    $btnHelp.Text            = '? Help'
+    $btnHelp.Text            = 'Help'
     $btnHelp.Font            = New-Object System.Drawing.Font('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
     $btnHelp.ForeColor       = [System.Drawing.Color]::White
     $btnHelp.BackColor       = [System.Drawing.Color]::FromArgb(60, 60, 65)
     $btnHelp.FlatStyle       = 'Flat'
-    $btnHelp.Size            = New-Object System.Drawing.Size(70, 26)
+    $btnHelp.Size            = New-Object System.Drawing.Size(60, 26)
     $btnHelp.Location        = New-Object System.Drawing.Point(500, 17)
     $btnHelp.Add_Click({
         Show-HelpWindow
@@ -73,7 +73,7 @@ function New-Form {
     
     # Ko-fi link (positioned dynamically to prevent cutoff)
     $lnkKofi                 = New-Object System.Windows.Forms.LinkLabel
-    $lnkKofi.Text            = '☕ Support on Ko-fi (Donate)'
+    $lnkKofi.Text            = 'Support on Ko-fi (Donate)'
     $lnkKofi.Font            = New-Object System.Drawing.Font('Segoe UI', 9)
     $lnkKofi.LinkColor       = [System.Drawing.Color]::LightCoral
     $lnkKofi.ActiveLinkColor = [System.Drawing.Color]::Coral
@@ -87,7 +87,7 @@ function New-Form {
     
     # GitHub link (positioned to left of Ko-fi)
     $lnkGitHub               = New-Object System.Windows.Forms.LinkLabel
-    $lnkGitHub.Text          = '⚙ GitHub Repository'
+    $lnkGitHub.Text          = 'GitHub Repository'
     $lnkGitHub.Font          = New-Object System.Drawing.Font('Segoe UI', 9)
     $lnkGitHub.LinkColor     = [System.Drawing.Color]::LightSkyBlue
     $lnkGitHub.ActiveLinkColor = [System.Drawing.Color]::DodgerBlue
@@ -115,15 +115,15 @@ function New-Form {
     $script:cmbFolder               = New-Object System.Windows.Forms.ComboBox
     $script:cmbFolder.DropDownStyle = 'DropDown'
     $script:cmbFolder.Location      = New-Object System.Drawing.Point(60, 68)
-    $script:cmbFolder.Size          = New-Object System.Drawing.Size(480, 28)
+    $script:cmbFolder.Size          = New-Object System.Drawing.Size(420, 28)
     $script:cmbFolder.Text          = $script:ScriptDir
     $form.Controls.Add($script:cmbFolder)
     
     # Browse folder button
     $btnBrowseFolder           = New-Object System.Windows.Forms.Button
-    $btnBrowseFolder.Text      = '...'
-    $btnBrowseFolder.Location  = New-Object System.Drawing.Point(550, 68)
-    $btnBrowseFolder.Size      = New-Object System.Drawing.Size(30, 22)
+    $btnBrowseFolder.Text      = 'Browse...'
+    $btnBrowseFolder.Location  = New-Object System.Drawing.Point(490, 68)
+    $btnBrowseFolder.Size      = New-Object System.Drawing.Size(80, 22)
     $form.Controls.Add($btnBrowseFolder)
 
     # FFmpeg path label
@@ -156,6 +156,7 @@ function New-Form {
     $script:lst.View             = 'Details'
     $script:lst.FullRowSelect    = $true
     $script:lst.MultiSelect      = $true
+    $script:lst.GridLines        = $true
     $script:lst.Location         = New-Object System.Drawing.Point(10, 145)
     $script:lst.Size             = New-Object System.Drawing.Size(540, 385)
     [void]$script:lst.Columns.Add('Name', 200)
@@ -196,10 +197,10 @@ function New-Form {
     $form.Controls.Add($lblBr)
 
     $script:cmbBr               = New-Object System.Windows.Forms.ComboBox
-    $script:cmbBr.DropDownStyle = 'DropDownList'
+    $script:cmbBr.DropDownStyle = 'DropDown'
     $script:cmbBr.Location      = New-Object System.Drawing.Point(590, 115)
     $script:cmbBr.Size          = New-Object System.Drawing.Size(140, 28)
-    [void]$script:cmbBr.Items.AddRange(@('2.5M','5M','7.5M','10M'))
+    [void]$script:cmbBr.Items.AddRange(@('Match Source','2.5M','5M','7.5M','10M'))
     $script:cmbBr.SelectedItem = '5M'
     $form.Controls.Add($script:cmbBr)
 
@@ -267,17 +268,47 @@ function New-Form {
     # ---------- Helpers ----------
     $script:CodecCache = @{}
     $script:BitrateCache = @{}
+    $script:BitrateCacheBps = @{}
 
     function script:Append-Log($text) {
         $script:txtLog.AppendText($text + "`r`n")
         $script:txtLog.SelectionStart = $script:txtLog.Text.Length
         $script:txtLog.ScrollToCaret()
     }
+    
+    function script:Normalize-Bitrate([string]$text, [int]$sourceBps) {
+        # Handle "Match Source" option
+        if ($text -eq 'Match Source') {
+            if ($sourceBps -gt 0) {
+                $kbps = [Math]::Max(1, [Math]::Round($sourceBps / 1000))
+                return "${kbps}k"
+            } else {
+                return '5M'  # Fallback if source bitrate unknown
+            }
+        }
+        
+        # Normalize custom input (e.g., "8M", "4500k", "4500")
+        $text = $text.Trim()
+        if ($text -match '^\d+$') {
+            # Plain number assumed to be bps, convert to k
+            $kbps = [Math]::Max(1, [Math]::Round([int]$text / 1000))
+            return "${kbps}k"
+        } elseif ($text -match '^(\d+)[kK]$') {
+            # Already in k format
+            return "$($matches[1])k"
+        } elseif ($text -match '^(\d+(\.\d+)?)[mM]$') {
+            # In M format, keep as is
+            return "$($matches[1])M"
+        } else {
+            # Invalid format, return as-is and let ffmpeg handle it
+            return $text
+        }
+    }
 
     function script:Show-HelpWindow {
         $helpForm = New-Object System.Windows.Forms.Form
         $helpForm.Text = 'JalaX Easy AV1 Converter - Help'
-        $helpForm.Size = New-Object System.Drawing.Size(700, 560)
+        $helpForm.Size = New-Object System.Drawing.Size(720, 600)
         $helpForm.StartPosition = 'CenterParent'
         $helpForm.FormBorderStyle = 'FixedDialog'
         $helpForm.MaximizeBox = $false
@@ -288,86 +319,115 @@ function New-Form {
         $rtb.ReadOnly = $true
         $rtb.DetectUrls = $true
         $rtb.Font = New-Object System.Drawing.Font('Segoe UI', 10)
-        $rtb.BackColor = [System.Drawing.Color]::White
+        $rtb.BackColor = [System.Drawing.Color]::FromArgb(250, 250, 250)
         $rtb.BorderStyle = 'None'
         
-        $helpText = @"
-JALAX EASY AV1 CONVERTER - HELP GUIDE
-
-WHAT IS THIS APPLICATION?
-This tool converts video files to the AV1 codec for better compression and smaller file sizes while maintaining quality. It supports batch conversion and provides time estimates.
-
-FFMPEG REQUIREMENT
-This application requires FFmpeg to function. FFmpeg is a free, open-source multimedia framework.
-
-Download FFmpeg: https://ffmpeg.org/download.html
-
-Installation Options:
-1. Add FFmpeg to Windows PATH environment variable (recommended)
-2. Place ffmpeg.exe in the same folder as this script
-3. Use the "Browse..." button to locate ffmpeg.exe manually
-
-To add FFmpeg to PATH:
-- Right-click "This PC" → Properties → Advanced system settings
-- Click "Environment Variables"
-- Under "System variables", find "Path" and click "Edit"
-- Click "New" and add the folder containing ffmpeg.exe
-- Click OK and restart PowerShell
-
-WHAT IS NVENC?
-NVENC is NVIDIA's hardware video encoder built into modern NVIDIA GPUs. It provides dramatically faster encoding compared to CPU-based encoding.
-
-Learn more: https://en.wikipedia.org/wiki/NVENC
-
-NVENC is NOT required - the application will work with CPU encoding (libaom-av1) if NVENC is unavailable. However, CPU encoding is significantly slower.
-
-ENABLE NVENC CHECKBOX
-- Checked: Use NVENC hardware encoding if available (much faster)
-- Unchecked: Force CPU encoding even if NVENC is available
-- The checkbox defaults to checked if your system supports NVENC
-
-SUPPORTED SOURCE FILE TYPES
-When "View all video files" is unchecked (default):
-- MKV files only
-
-When "View all video files" is checked:
-- MKV, MP4, AVI, MOV, M4V, WebM, TS, M2TS, WMV, FLV, MPG, MPEG, VOB
-
-CHOOSING THE RIGHT BITRATE
-The "Bitrate" column shows your source file's actual bitrate.
-
-Guidelines:
-- Match source bitrate: Good quality, moderate file size reduction
-- Lower than source: Smaller files, some quality loss
-- Higher than source: Larger files, NO quality improvement (wasteful)
-
-Recommended approach:
-1. Check your source file's bitrate in the list
-2. Choose a target bitrate at or below the source
-3. For high-quality sources (10+ Mbps), try 5-7.5M
-4. For lower-quality sources (3-5 Mbps), try 2.5-5M
-5. Use "Test Speed" to estimate conversion time before starting
-
-BASIC WORKFLOW
-1. Select folder containing video files
-2. Check "View all video files" if needed
-3. Click "Refresh" to scan for files
-4. Select files to convert (Ctrl+Click for multiple)
-5. Choose target bitrate
-6. Optional: Click "Test Speed" to estimate time
-7. Click "Convert to AV1" to start
-8. Monitor progress in the log window
-
-TIPS
-- Close other GPU-intensive applications before converting
-- Use NVENC for much faster encoding if available
-- Test with one file first to verify settings
-- Original files are renamed to .old and moved to _Old folder by default
-
-For more information, visit the GitHub repository.
-"@
+        # Helper function to append formatted text
+        function Append-Heading($text) {
+            $rtb.SelectionFont = New-Object System.Drawing.Font('Segoe UI', 14, [System.Drawing.FontStyle]::Bold)
+            $rtb.SelectionColor = [System.Drawing.Color]::FromArgb(30, 144, 255)
+            $rtb.AppendText($text)
+            $rtb.AppendText("`r`n`r`n")
+        }
         
-        $rtb.Text = $helpText
+        function Append-SectionTitle($text) {
+            $rtb.SelectionFont = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
+            $rtb.SelectionColor = [System.Drawing.Color]::FromArgb(70, 130, 180)
+            $rtb.AppendText($text)
+            $rtb.AppendText("`r`n")
+        }
+        
+        function Append-Body($text) {
+            $rtb.SelectionFont = New-Object System.Drawing.Font('Segoe UI', 10)
+            $rtb.SelectionColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
+            $rtb.AppendText($text)
+            $rtb.AppendText("`r`n")
+        }
+        
+        function Append-Bullet($text) {
+            $rtb.SelectionFont = New-Object System.Drawing.Font('Segoe UI', 10)
+            $rtb.SelectionColor = [System.Drawing.Color]::FromArgb(40, 40, 40)
+            $rtb.AppendText("  • $text")
+            $rtb.AppendText("`r`n")
+        }
+        
+        # Build formatted help content
+        Append-Heading "JALAX EASY AV1 CONVERTER - HELP GUIDE"
+        
+        Append-SectionTitle "WHAT IS THIS APPLICATION?"
+        Append-Body "This tool converts video files to the AV1 codec for better compression and smaller file sizes while maintaining quality. It supports batch conversion and provides time estimates."
+        $rtb.AppendText("`r`n")
+        
+        Append-SectionTitle "FFMPEG REQUIREMENT"
+        Append-Body "This application requires FFmpeg to function. FFmpeg is a free, open-source multimedia framework."
+        $rtb.AppendText("`r`n")
+        Append-Body "Download FFmpeg: https://ffmpeg.org/download.html"
+        $rtb.AppendText("`r`n")
+        Append-Body "Installation Options:"
+        Append-Bullet "Add FFmpeg to Windows PATH environment variable (recommended)"
+        Append-Bullet "Place ffmpeg.exe in the same folder as this script"
+        Append-Bullet "Use the 'Browse...' button to locate ffmpeg.exe manually"
+        $rtb.AppendText("`r`n")
+        Append-Body "To add FFmpeg to PATH:"
+        Append-Bullet "Right-click 'This PC' → Properties → Advanced system settings"
+        Append-Bullet "Click 'Environment Variables'"
+        Append-Bullet "Under 'System variables', find 'Path' and click 'Edit'"
+        Append-Bullet "Click 'New' and add the folder containing ffmpeg.exe"
+        Append-Bullet "Click OK and restart PowerShell"
+        $rtb.AppendText("`r`n")
+        
+        Append-SectionTitle "WHAT IS NVENC?"
+        Append-Body "NVENC is NVIDIA's hardware video encoder built into modern NVIDIA GPUs. It provides dramatically faster encoding compared to CPU-based encoding."
+        $rtb.AppendText("`r`n")
+        Append-Body "Learn more: https://en.wikipedia.org/wiki/NVENC"
+        $rtb.AppendText("`r`n")
+        Append-Body "NVENC is NOT required - the application will work with CPU encoding (libaom-av1) if NVENC is unavailable. However, CPU encoding is significantly slower."
+        $rtb.AppendText("`r`n")
+        
+        Append-SectionTitle "ENABLE NVENC CHECKBOX"
+        Append-Bullet "Checked: Use NVENC hardware encoding if available (much faster)"
+        Append-Bullet "Unchecked: Force CPU encoding even if NVENC is available"
+        Append-Bullet "The checkbox defaults to checked if your system supports NVENC"
+        $rtb.AppendText("`r`n")
+        
+        Append-SectionTitle "SUPPORTED SOURCE FILE TYPES"
+        Append-Body "When 'View all video files' is unchecked (default):"
+        Append-Bullet "MKV files only"
+        $rtb.AppendText("`r`n")
+        Append-Body "When 'View all video files' is checked:"
+        Append-Bullet "MKV, MP4, AVI, MOV, M4V, WebM, TS, M2TS, WMV, FLV, MPG, MPEG, VOB"
+        $rtb.AppendText("`r`n")
+        
+        Append-SectionTitle "CHOOSING THE RIGHT BITRATE"
+        Append-Body "The 'Bitrate' column shows your source file's actual bitrate."
+        $rtb.AppendText("`r`n")
+        Append-Body "Guidelines:"
+        Append-Bullet "Match source bitrate: Good quality, moderate file size reduction"
+        Append-Bullet "Lower than source: Smaller files, some quality loss"
+        Append-Bullet "Higher than source: Larger files, NO quality improvement (wasteful)"
+        $rtb.AppendText("`r`n")
+        Append-Body "You can select 'Match Source' to automatically use the source bitrate, or enter a custom value like '8M' or '4500k'."
+        $rtb.AppendText("`r`n")
+        
+        Append-SectionTitle "BASIC WORKFLOW"
+        Append-Bullet "Select folder containing video files"
+        Append-Bullet "Check 'View all video files' if needed"
+        Append-Bullet "Click 'Refresh' to scan for files"
+        Append-Bullet "Select files to convert (Ctrl+Click for multiple)"
+        Append-Bullet "Choose target bitrate or enter custom value"
+        Append-Bullet "Optional: Click 'Test Speed' to estimate time"
+        Append-Bullet "Click 'Convert to AV1' to start"
+        Append-Bullet "Monitor progress in the log window"
+        $rtb.AppendText("`r`n")
+        
+        Append-SectionTitle "TIPS"
+        Append-Bullet "Close other GPU-intensive applications before converting"
+        Append-Bullet "Use NVENC for much faster encoding if available"
+        Append-Bullet "Test with one file first to verify settings"
+        Append-Bullet "Original files are renamed to .old and moved to _Old folder by default"
+        $rtb.AppendText("`r`n")
+        Append-Body "For more information, visit the GitHub repository.")
+        
         $rtb.Add_LinkClicked({
             param($sender, $e)
             Start-Process $e.LinkText
@@ -702,6 +762,81 @@ For more information, visit the GitHub repository.
         $script:BitrateCache[$FullPath] = $bitrateStr
         return $script:BitrateCache[$FullPath]
     }
+    
+    function script:Get-VideoBitrateBps([string]$FullPath) {
+        if ($script:BitrateCacheBps.ContainsKey($FullPath)) { return $script:BitrateCacheBps[$FullPath] }
+        $bitrate = 0
+        $ffprobe = $null
+        try { $ffprobe = (Get-Command ffprobe -ErrorAction Stop).Path } catch {}
+        if (-not $ffprobe -and $script:FfmpegPath) {
+            try { $ffdir = [System.IO.Path]::GetDirectoryName($script:FfmpegPath); $cand = Join-Path -Path $ffdir -ChildPath 'ffprobe.exe'; if (Test-Path -LiteralPath $cand) { $ffprobe = $cand } } catch {}
+        }
+        if ($ffprobe) {
+            try {
+                # Try to get video stream bitrate first
+                $psi = New-Object System.Diagnostics.ProcessStartInfo
+                $psi.FileName  = $ffprobe
+                $psi.Arguments = ('-v error -select_streams v:0 -show_entries stream=bit_rate -of default=nw=1:nk=1 "{0}"' -f $FullPath)
+                $psi.RedirectStandardOutput = $true
+                $psi.RedirectStandardError  = $true
+                $psi.UseShellExecute = $false
+                $psi.CreateNoWindow = $true
+                $p = New-Object System.Diagnostics.Process
+                $p.StartInfo = $psi
+                [void]$p.Start()
+                $out = $p.StandardOutput.ReadToEnd().Trim()
+                $p.WaitForExit()
+                if ($out -and $out -match '^\d+$') { $bitrate = [int]$out }
+            } catch {}
+            
+            # Fallback to container bitrate if stream bitrate not available
+            if ($bitrate -le 0) {
+                try {
+                    $psi = New-Object System.Diagnostics.ProcessStartInfo
+                    $psi.FileName  = $ffprobe
+                    $psi.Arguments = ('-v error -show_entries format=bit_rate -of default=nw=1:nk=1 "{0}"' -f $FullPath)
+                    $psi.RedirectStandardOutput = $true
+                    $psi.RedirectStandardError  = $true
+                    $psi.UseShellExecute = $false
+                    $psi.CreateNoWindow = $true
+                    $p = New-Object System.Diagnostics.Process
+                    $p.StartInfo = $psi
+                    [void]$p.Start()
+                    $out = $p.StandardOutput.ReadToEnd().Trim()
+                    $p.WaitForExit()
+                    if ($out -and $out -match '^\d+$') { $bitrate = [int]$out }
+                } catch {}
+            }
+            
+            # Last resort: estimate from file size and duration
+            if ($bitrate -le 0) {
+                try {
+                    $psi = New-Object System.Diagnostics.ProcessStartInfo
+                    $psi.FileName  = $ffprobe
+                    $psi.Arguments = ('-v error -show_entries format=duration -of default=nw=1:nk=1 "{0}"' -f $FullPath)
+                    $psi.RedirectStandardOutput = $true
+                    $psi.RedirectStandardError  = $true
+                    $psi.UseShellExecute = $false
+                    $psi.CreateNoWindow = $true
+                    $p = New-Object System.Diagnostics.Process
+                    $p.StartInfo = $psi
+                    [void]$p.Start()
+                    $out = $p.StandardOutput.ReadToEnd().Trim()
+                    $p.WaitForExit()
+                    if ($out -and $out -match '^\d+\.?\d*$') {
+                        $duration = [double]$out
+                        if ($duration -gt 0) {
+                            $fileInfo = Get-Item -LiteralPath $FullPath
+                            $bitrate = [int](($fileInfo.Length * 8) / $duration)
+                        }
+                    }
+                } catch {}
+            }
+        }
+        
+        $script:BitrateCacheBps[$FullPath] = $bitrate
+        return $script:BitrateCacheBps[$FullPath]
+    }
 
     function script:Get-VideoFrameCount([string]$FullPath) {
         $ffprobe = $null
@@ -898,11 +1033,15 @@ For more information, visit the GitHub repository.
                 }
             }
 
-            Append-Log ("Converting {0} -> {1} at {2}" -f $name, [System.IO.Path]::GetFileName($out), $script:cmbBr.SelectedItem)
+            # Normalize bitrate (handle "Match Source" and custom input)
+            $sourceBps = Get-VideoBitrateBps -FullPath $in
+            $normalizedBitrate = Normalize-Bitrate -text $script:cmbBr.Text -sourceBps $sourceBps
+            
+            Append-Log ("Converting {0} -> {1} at {2}" -f $name, [System.IO.Path]::GetFileName($out), $normalizedBitrate)
             
             # Track conversion time for adaptive calibration
             $conversionStart = Get-Date
-            $code = Run-FFmpeg-AV1 -inputPath $in -outputPath $out -bitrate $script:cmbBr.SelectedItem
+            $code = Run-FFmpeg-AV1 -inputPath $in -outputPath $out -bitrate $normalizedBitrate
             $conversionEnd = Get-Date
             $actualSeconds = ($conversionEnd - $conversionStart).TotalSeconds
             
@@ -1381,6 +1520,7 @@ For more information, visit the GitHub repository.
         $files = @()
         foreach ($pat in $patterns) { $files += Get-ChildItem -LiteralPath $script:ScriptDir -Filter $pat -File -ErrorAction SilentlyContinue }
         $files = $files | Sort-Object Name -Unique
+        $i = 0
         foreach ($f in $files) {
             $sizeMB = [Math]::Round(($f.Length/1MB),2)
             $codec = Get-VideoCodec -FullPath $f.FullName
@@ -1391,7 +1531,14 @@ For more information, visit the GitHub repository.
             [void]$item.SubItems.Add($bitrate)
             [void]$item.SubItems.Add("")  # Est. Time column (empty initially)
             $item.Tag = $f.Name
+            
+            # Zebra striping for better readability
+            if ($i % 2 -eq 0) {
+                $item.BackColor = [System.Drawing.Color]::FromArgb(245, 245, 245)
+            }
+            
             [void]$script:lst.Items.Add($item)
+            $i++
         }
         if ($script:lst.Items.Count -eq 0) { 
             $msg = if ($All) { 'No video files found.' } else { 'No video source files found.' }
